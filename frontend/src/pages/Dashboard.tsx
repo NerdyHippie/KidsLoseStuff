@@ -81,7 +81,7 @@ export default function Dashboard() {
       {/* Navbar */}
       <nav className="navbar">
         <div className="navbar-inner">
-          <span className="navbar-brand">Lost &amp; <span>Found</span></span>
+          <span className="navbar-brand">Kids Lose <span>Stuff</span></span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             {me?.role === 'superadmin' && (
               <Link to="/admin" className="btn btn-ghost btn-sm" style={{ color: '#fff', borderColor: 'rgba(255,255,255,0.3)' }}>

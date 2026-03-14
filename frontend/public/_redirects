@@ -1,8 +1,5 @@
 /* SPA catch-all – must be in /public */
-/*
-  /api/*  https://kids-lose-stuff.YOUR_SUBDOMAIN.workers.dev/api/:splat  200
-*/
-/* Uncomment the line above and replace YOUR_SUBDOMAIN once you know your worker URL */
+/api/*  https://kids-lose-stuff.nerdiesthippie.workers.dev/api/:splat  200
 
 /* SPA fallback */
 /*  All non-API, non-asset routes serve index.html */

@@ -51,7 +51,7 @@ export default function Gallery() {
       {/* Hero */}
       <header className={styles.hero}>
         <div className={styles.heroInner}>
-          <div className={styles.heroTag}>Lost &amp; Found</div>
+          <div className={styles.heroTag}>Kids Lose Stuff</div>
           <h1 className={styles.heroTitle}>{school.name}</h1>
           <p className={styles.heroSub}>
             Recognize something? Tap <strong>Claim This Item</strong> and enter your

@@ -25,7 +25,7 @@ export default function Login() {
     <div className={styles.page}>
       <div className={styles.card}>
         <div className={styles.icon}>🔍</div>
-        <h1 className={styles.title}>Lost &amp; Found</h1>
+        <h1 className={styles.title}>Kids Lose Stuff</h1>
         <p className={styles.sub}>Faculty sign-in to manage your school's lost items gallery.</p>
 
         {errorCode && (
@@ -46,7 +46,7 @@ export default function Login() {
       </div>
 
       <footer className={styles.footer}>
-        Lost &amp; Found — free, private, no ads.
+        Kids Lose Stuff — free, private, no ads.
       </footer>
     </div>
   );
