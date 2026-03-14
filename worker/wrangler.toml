@@ -1,20 +1,20 @@
-name = "lost-and-found"
+name = "kids-lose-stuff"
 main = "src/index.ts"
 compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 
 [[d1_databases]]
 binding = "DB"
-database_name = "lost-and-found"
-database_id = "REPLACE_WITH_YOUR_D1_ID"   # wrangler d1 create lost-and-found
+database_name = "kids-lose-stuff"
+database_id = "49d839e4-6d3a-4e1f-ac73-cabffab41f3d"   # wrangler d1 create kids-lose-stuff
 
 [[r2_buckets]]
 binding = "BUCKET"
-bucket_name = "lost-and-found-photos"     # wrangler r2 bucket create lost-and-found-photos
+bucket_name = "kids-lose-stuff-photos"     # wrangler r2 bucket create kids-lose-stuff-photos
 
 [vars]
-FRONTEND_URL  = "https://REPLACE.pages.dev"   # your Cloudflare Pages URL
-WORKER_URL    = "https://lost-and-found.REPLACE.workers.dev"
+FRONTEND_URL  = "https://kids-lose-stuff`.pages.dev"   # your Cloudflare Pages URL
+WORKER_URL    = "https://kids-lose-stuff.nerdiesthippie.workers.dev"
 
 # Set these secrets via: wrangler secret put SECRET_NAME
 # GOOGLE_CLIENT_ID        – from Google Cloud Console OAuth 2.0 client

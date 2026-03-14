@@ -1,5 +1,5 @@
 -- Lost & Found Schema
--- Run with: wrangler d1 execute lost-and-found --file=schema.sql
+-- Run with: wrangler d1 execute kids-lose-stuff --file=schema.sql
 
 CREATE TABLE IF NOT EXISTS schools (
   id        TEXT PRIMARY KEY,

@@ -23,7 +23,7 @@ Built on Cloudflare Workers + D1 + R2 + Pages. No egress fees.
 6. Name it anything (e.g. "Lost and Found App")
 7. Under **Authorized redirect URIs**, add:
    ```
-   https://lost-and-found.YOUR_SUBDOMAIN.workers.dev/api/auth/callback
+   https://kids-lose-stuff.YOUR_SUBDOMAIN.workers.dev/api/auth/callback
    ```
    *(You'll know your worker URL after Step 3 — come back and add it)*
 8. Click **Create** and note your **Client ID** and **Client Secret**
@@ -45,11 +45,11 @@ This opens a browser to authenticate with your Cloudflare account.
 
 ```bash
 # Create the D1 database
-wrangler d1 create lost-and-found
+wrangler d1 create kids-lose-stuff
 # → Note the database_id it prints
 
 # Create the R2 bucket
-wrangler r2 bucket create lost-and-found-photos
+wrangler r2 bucket create kids-lose-stuff-photos
 ```
 
 ---
@@ -64,11 +64,11 @@ database_id = "PASTE_YOUR_D1_ID_HERE"
 
 [vars]
 FRONTEND_URL = "https://YOUR_PROJECT.pages.dev"   # fill after Step 7
-WORKER_URL   = "https://lost-and-found.YOUR_SUBDOMAIN.workers.dev"
+WORKER_URL   = "https://kids-lose-stuff.YOUR_SUBDOMAIN.workers.dev"
 ```
 
 To find your worker URL subdomain, run `wrangler whoami`.
-Your worker URL will be `https://lost-and-found.ACCOUNTNAME.workers.dev`.
+Your worker URL will be `https://kids-lose-stuff.ACCOUNTNAME.workers.dev`.
 
 ---
 
@@ -113,7 +113,7 @@ npm run deploy
 
 Note the URL it prints, e.g.:
 ```
-https://lost-and-found.myaccount.workers.dev
+https://kids-lose-stuff.myaccount.workers.dev
 ```
 
 Go back to **Step 4** and update `WORKER_URL` in `wrangler.toml`, then redeploy:
@@ -123,7 +123,7 @@ npm run deploy
 
 Also go back to **Step 1** and add the callback URL to your Google OAuth client:
 ```
-https://lost-and-found.myaccount.workers.dev/api/auth/callback
+https://kids-lose-stuff.myaccount.workers.dev/api/auth/callback
 ```
 
 ---
@@ -139,12 +139,12 @@ npm run build
 Then deploy to Cloudflare Pages:
 
 ```bash
-wrangler pages deploy dist --project-name lost-and-found
+wrangler pages deploy dist --project-name kids-lose-stuff
 ```
 
 On first run it will create the project and give you a URL like:
 ```
-https://lost-and-found.pages.dev
+https://kids-lose-stuff.pages.dev
 ```
 
 Go back to **Step 4** and update `FRONTEND_URL` in `wrangler.toml`, then redeploy the worker:
@@ -154,12 +154,12 @@ cd ../worker && npm run deploy
 
 Also create a `.env` file in `frontend/`:
 ```
-VITE_API_URL=https://lost-and-found.YOUR_SUBDOMAIN.workers.dev
+VITE_API_URL=https://kids-lose-stuff.YOUR_SUBDOMAIN.workers.dev
 ```
 Rebuild and redeploy the frontend:
 ```bash
 cd frontend && npm run build
-wrangler pages deploy dist --project-name lost-and-found
+wrangler pages deploy dist --project-name kids-lose-stuff
 ```
 
 ---
@@ -182,7 +182,7 @@ wrangler pages deploy dist --project-name lost-and-found
 From the Admin panel, click the gallery link for a school.
 Share this URL with parents via email, group chat, or your school newsletter:
 ```
-https://lost-and-found.pages.dev/gallery/YOUR-SCHOOL-SLUG
+https://kids-lose-stuff.pages.dev/gallery/YOUR-SCHOOL-SLUG
 ```
 
 Parents can browse without any login and tap **Claim This Item** on anything they recognize.

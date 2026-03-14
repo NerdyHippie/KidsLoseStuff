@@ -1,11 +1,11 @@
 {
-  "name": "lost-and-found-worker",
+  "name": "kids-lose-stuff-worker",
   "private": true,
   "version": "1.0.0",
   "scripts": {
     "dev":    "wrangler dev --local",
     "deploy": "wrangler deploy",
-    "db:init": "wrangler d1 execute lost-and-found --file=schema.sql"
+    "db:init": "wrangler d1 execute kids-lose-stuff --file=schema.sql"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20241022.0",
