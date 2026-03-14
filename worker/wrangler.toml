@@ -1,0 +1,23 @@
+name = "lost-and-found"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "lost-and-found"
+database_id = "REPLACE_WITH_YOUR_D1_ID"   # wrangler d1 create lost-and-found
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "lost-and-found-photos"     # wrangler r2 bucket create lost-and-found-photos
+
+[vars]
+FRONTEND_URL  = "https://REPLACE.pages.dev"   # your Cloudflare Pages URL
+WORKER_URL    = "https://lost-and-found.REPLACE.workers.dev"
+
+# Set these secrets via: wrangler secret put SECRET_NAME
+# GOOGLE_CLIENT_ID        – from Google Cloud Console OAuth 2.0 client
+# GOOGLE_CLIENT_SECRET    – from Google Cloud Console OAuth 2.0 client
+# JWT_SECRET              – any long random string (openssl rand -hex 32)
+# SUPERADMIN_EMAIL        – your Google email; gets full access on first login
