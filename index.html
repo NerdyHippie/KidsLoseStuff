@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Kids Lose Stuff</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            max-width: 900px;
+            margin: auto;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, 200px);
+            gap: 20px;
+        }
+
+        .card {
+            border: 1px solid #ddd;
+            padding: 10px;
+        }
+
+        img {
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>Kids Lose Stuff</h1>
+
+<div id="gallery" class="grid"></div>
+
+<script>
+
+    const API_URL = "PASTE_APPS_SCRIPT_URL";
+
+    async function loadItems() {
+
+        const res = await fetch(API_URL);
+        const items = await res.json();
+
+        const gallery = document.getElementById("gallery");
+
+        items.forEach(i => {
+
+            const card = document.createElement("div");
+            card.className = "card";
+
+            card.innerHTML = `
+      <img src="https://drive.google.com/thumbnail?id=${i.photoFileId}&sz=w400">
+      <p>${i.category} - ${i.color}</p>
+      <button onclick="claim('${i.id}')">Claim</button>
+    `;
+
+            gallery.appendChild(card);
+        });
+
+    }
+
+    function claim(id) {
+
+        const email = prompt("Parent Email:");
+        const first = prompt("Student First Name:");
+        const last = prompt("Student Last Initial:");
+
+        fetch(API_URL, {
+            method: "POST",
+            body: JSON.stringify({
+                itemId: id,
+                parentEmail: email,
+                studentFirst: first,
+                studentLastInitial: last
+            })
+        });
+
+        alert("Claim submitted. Staff will verify.");
+
+    }
+
+    loadItems();
+
+</script>
+
+</body>
+</html>
