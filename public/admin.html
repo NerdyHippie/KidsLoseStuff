@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kids Lose Stuff</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+<main class="container">
+  <header class="header">
+    <h1>Kids Lose Stuff Admin</h1>
+    <p id="authMessage">Checking access...</p>
+  </header>
+
+  <section id="accessDenied" class="panel hidden">
+    <h2 class="section-title">Access denied</h2>
+    <p>You must be an authorized admin to use this page.</p>
+  </section>
+
+  <div id="adminApp" class="hidden">
+    <section class="panel">
+      <h2 class="section-title">Add lost item</h2>
+      <form id="createItemForm">
+        <div class="dropzone">
+          <p><strong>Upload photo</strong></p>
+          <p class="small">Use a compressed image. Metadata should be stripped before upload.</p>
+          <input id="photoInput" type="file" accept="image/*" required />
+          <img id="photoPreview" class="preview hidden" alt="Preview" />
+        </div>
+        <div class="toolbar" style="margin-top:16px;">
+          <label>Category
+            <select id="categoryInput" required>
+              <option value="">Choose a category</option>
+              <option>Jacket</option>
+              <option>Water Bottle</option>
+              <option>Lunch Box</option>
+              <option>Backpack</option>
+              <option>Sweatshirt</option>
+              <option>Hat</option>
+              <option>Gloves</option>
+              <option>Other</option>
+            </select>
+          </label>
+          <label>Color
+            <input id="colorInput" type="text" placeholder="Blue" />
+          </label>
+          <label>Date found
+            <input id="dateFoundInput" type="date" required />
+          </label>
+        </div>
+        <label>Notes
+          <textarea id="notesInput" placeholder="Brand, size, unique markings..."></textarea>
+        </label>
+        <div class="actions" style="margin-top:16px;">
+          <button type="submit" class="btn-primary">Create item</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel" style="margin-top:20px;">
+      <h2 class="section-title">Current items</h2>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+          <tr>
+            <th>ID</th>
+            <th>Photo</th>
+            <th>Details</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+          </thead>
+          <tbody id="itemsTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel" style="margin-top:20px; margin-bottom:24px;">
+      <h2 class="section-title">Claims</h2>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+          <tr>
+            <th>Claim</th>
+            <th>Item</th>
+            <th>Parent</th>
+            <th>Student</th>
+            <th>Note</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+          </thead>
+          <tbody id="claimsTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script src="./admin.js"></script>
+</body>
+
+</html>
