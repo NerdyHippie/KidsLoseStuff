@@ -8,7 +8,7 @@ export interface School {
 export interface Item {
   id: string;
   description: string;
-  image_key?: string;   // only in dashboard
+  image_key?: string;
   status: 'unclaimed' | 'claimed';
   created_at: number;
   // claim info (if claimed)

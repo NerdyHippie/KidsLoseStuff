@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { api } from '../api';
 import type { Item, School } from '../types';
 import ClaimModal from '../components/ClaimModal';
+import Lightbox from '../components/Lightbox';
 import styles from './Gallery.module.css';
 
 export default function Gallery() {
@@ -14,6 +15,7 @@ export default function Gallery() {
   const [claimItem, setClaimItem] = useState<Item | null>(null);
   const [claimedIds, setClaimedIds] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState<'all' | 'unclaimed' | 'claimed'>('all');
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   useEffect(() => {
     if (!slug) return;
@@ -31,6 +33,8 @@ export default function Gallery() {
 
   const filtered = items.filter(i => filter === 'all' ? true : i.status === filter);
   const unclaimed = items.filter(i => i.status === 'unclaimed').length;
+
+  const lightboxItem = lightboxIndex !== null ? filtered[lightboxIndex] : null;
 
   if (loading) return (
     <div className={styles.center}><span className="spinner spinner-dark" /></div>
@@ -106,21 +110,23 @@ export default function Gallery() {
                 >
                   <div className={styles.imgWrap}>
                     <img
-                      src={`/api/images/${encodeURIComponent(item.image_key ?? '')}`}
-                      alt={item.description}
+                      src={api.imageUrl(item.image_key ?? '')}
+                      alt={item.description || 'Lost item'}
                       className={styles.img}
                       loading="lazy"
+                      style={{ cursor: 'zoom-in' }}
+                      onClick={() => setLightboxIndex(i)}
                     />
                     <div className={styles.statusBadge}>
                       <span className={`badge badge-${item.status}`}>{item.status}</span>
                     </div>
                   </div>
                   <div className={styles.cardBody}>
-                    <p className={styles.desc}>{item.description}</p>
+                    <p className={styles.desc}>{item.description || <em style={{ color: 'var(--muted)' }}>No description</em>}</p>
                     {item.status === 'claimed' ? (
                       <div className={styles.claimInfo}>
                         <span className={styles.claimIcon}>✓</span>
-                        Claimed by <strong>{item.initials}</strong> · {item.teacher_name}'s class
+                        Claimed
                       </div>
                     ) : (
                       <button
@@ -150,6 +156,16 @@ export default function Gallery() {
           item={claimItem}
           onClose={() => setClaimItem(null)}
           onClaimed={handleClaimed}
+        />
+      )}
+
+      {lightboxItem && (
+        <Lightbox
+          src={api.imageUrl(lightboxItem.image_key ?? '')}
+          alt={lightboxItem.description || 'Lost item'}
+          onClose={() => setLightboxIndex(null)}
+          onPrev={lightboxIndex! > 0 ? () => setLightboxIndex(i => i! - 1) : undefined}
+          onNext={lightboxIndex! < filtered.length - 1 ? () => setLightboxIndex(i => i! + 1) : undefined}
         />
       )}
     </div>

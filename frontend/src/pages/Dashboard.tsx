@@ -4,6 +4,7 @@ import { useAuth } from '../App';
 import { api } from '../api';
 import type { Item, School, FacultyMember } from '../types';
 import UploadModal from '../components/UploadModal';
+import Lightbox from '../components/Lightbox';
 import styles from './Dashboard.module.css';
 
 export default function Dashboard() {
@@ -16,6 +17,8 @@ export default function Dashboard() {
   const [schools, setSchools]   = useState<School[]>([]);
   const [selectedSchool, setSelectedSchool] = useState<string | null>(null);
   const [tab, setTab]           = useState<'items' | 'team'>('items');
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  const [lightboxAlt, setLightboxAlt] = useState('');
 
   const effectiveSchoolId = selectedSchool ?? me?.schoolId ?? null;
   const canManageTeam = me?.role === 'schooladmin' || me?.role === 'superadmin';
@@ -170,6 +173,7 @@ export default function Dashboard() {
                 </p>
               </div>
             ) : (
+              <>
               <div className={styles.tableWrap}>
                 <table className={styles.table}>
                   <thead>
@@ -188,12 +192,19 @@ export default function Dashboard() {
                       <tr key={item.id} className={item.status === 'claimed' ? styles.claimedRow : ''}>
                         <td>
                           <img
-                            src={`/api/images/${encodeURIComponent(item.image_key ?? '')}`}
-                            alt={item.description}
+                            src={api.imageUrl(item.image_key ?? '')}
+                            alt={item.description || 'Lost item'}
                             className={styles.thumb}
+                            style={{ cursor: 'zoom-in' }}
+                            onClick={() => {
+                              setLightboxSrc(api.imageUrl(item.image_key ?? ''));
+                              setLightboxAlt(item.description || 'Lost item');
+                            }}
                           />
                         </td>
-                        <td className={styles.descCell}>{item.description}</td>
+                        <td className={styles.descCell}>
+                          {item.description || <span className={styles.dash}>—</span>}
+                        </td>
                         <td><span className={`badge badge-${item.status}`}>{item.status}</span></td>
                         <td className={styles.initialsCell}>
                           {item.initials ? <strong>{item.initials}</strong> : <span className={styles.dash}>—</span>}
@@ -217,6 +228,42 @@ export default function Dashboard() {
                   </tbody>
                 </table>
               </div>
+
+              {/* Mobile card list */}
+              <div className={styles.cardList}>
+                {filtered.map(item => (
+                  <div key={item.id} className={`${styles.itemCard} ${item.status === 'claimed' ? styles.claimedCard : ''}`}>
+                    <img
+                      src={api.imageUrl(item.image_key ?? '')}
+                      alt={item.description || 'Lost item'}
+                      className={styles.itemThumb}
+                      onClick={() => { setLightboxSrc(api.imageUrl(item.image_key ?? '')); setLightboxAlt(item.description || 'Lost item'); }}
+                    />
+                    <div className={styles.itemCardBody}>
+                      <span className={styles.itemCardDesc}>{item.description || <em style={{ color: 'var(--muted)', fontWeight: 400 }}>No description</em>}</span>
+                      <span className={styles.itemCardMeta}>{formatDate(item.created_at)}</span>
+                    </div>
+                    <div className={styles.itemCardActions}>
+                      <span className={`badge badge-${item.status}`}>{item.status}</span>
+                      {item.status === 'claimed' && (
+                        <span style={{ fontSize: 12, color: 'var(--muted)' }}>
+                          <strong>{item.initials}</strong> · {item.teacher_name}
+                        </span>
+                      )}
+                      <button
+                        className="btn btn-success btn-sm"
+                        disabled={deleting === item.id}
+                        onClick={() => handleDelete(item.id)}
+                      >
+                        {deleting === item.id
+                          ? <span className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} />
+                          : '✓ Returned'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              </>
             )}
           </>
         )}
@@ -232,6 +279,14 @@ export default function Dashboard() {
           schoolId={effectiveSchoolId}
           onClose={() => setShowUpload(false)}
           onUploaded={() => { setShowUpload(false); loadItems(); }}
+        />
+      )}
+
+      {lightboxSrc && (
+        <Lightbox
+          src={lightboxSrc}
+          alt={lightboxAlt}
+          onClose={() => setLightboxSrc(null)}
         />
       )}
     </div>
@@ -324,6 +379,7 @@ function TeamPanel({ schoolId }: { schoolId: string }) {
       ) : members.length === 0 ? (
         <div className={styles.empty}><p>No team members yet.</p></div>
       ) : (
+        <>
         <div className={styles.tableWrap}>
           <table className={styles.table}>
             <thead>
@@ -343,6 +399,23 @@ function TeamPanel({ schoolId }: { schoolId: string }) {
             </tbody>
           </table>
         </div>
+
+        {/* Mobile card list */}
+        <div className={styles.cardList}>
+          {members.map(m => (
+            <div key={m.id} className={styles.memberCard}>
+              <div className={styles.memberInfo}>
+                <span className={styles.memberEmail}>{m.email}</span>
+                {m.name && <span className={styles.memberName}>{m.name}</span>}
+                <span style={{ marginTop: 4 }}>
+                  <span className={`badge ${roleColor[m.role] ?? 'badge-unclaimed'}`}>{m.role}</span>
+                </span>
+              </div>
+              <button className="btn btn-danger btn-sm" onClick={() => handleRemove(m)}>Remove</button>
+            </div>
+          ))}
+        </div>
+        </>
       )}
     </div>
   );

@@ -130,7 +130,12 @@ img { max-width: 100%; display: block; }
 }
 .modal h2 { font-size: 22px; margin-bottom: 8px; }
 .modal .subtitle { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
-.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; flex-wrap: wrap; }
+.modal-actions > * { flex-shrink: 0; }
+@media (max-width: 400px) {
+  .modal-actions { flex-direction: column-reverse; }
+  .modal-actions .btn { width: 100%; justify-content: center; }
+}
 
 /* ── Spinner ───────────────────────────────────────────────────────────── */
 .spinner {

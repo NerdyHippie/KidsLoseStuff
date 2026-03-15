@@ -8,12 +8,13 @@ interface Props {
 }
 
 export default function UploadModal({ schoolId, onClose, onUploaded }: Props) {
-  const [file, setFile]             = useState<File | null>(null);
-  const [preview, setPreview]       = useState<string | null>(null);
+  const [file, setFile]               = useState<File | null>(null);
+  const [preview, setPreview]         = useState<string | null>(null);
   const [description, setDescription] = useState('');
-  const [loading, setLoading]       = useState(false);
-  const [error, setError]           = useState('');
-  const inputRef                    = useRef<HTMLInputElement>(null);
+  const [loading, setLoading]         = useState(false);
+  const [error, setError]             = useState('');
+  const [successCount, setSuccessCount] = useState(0);
+  const inputRef                      = useRef<HTMLInputElement>(null);
 
   const handleFile = (f: File) => {
     // Compress if needed (max 1200px) using canvas
@@ -45,13 +46,24 @@ export default function UploadModal({ schoolId, onClose, onUploaded }: Props) {
     if (f?.type.startsWith('image/')) handleFile(f);
   };
 
-  const handleSubmit = async () => {
+  const reset = () => {
+    setFile(null);
+    setPreview(null);
+    setDescription('');
+    setError('');
+    if (inputRef.current) inputRef.current.value = '';
+  };
+
+  const handleSubmit = async (addAnother = false) => {
     if (!file) { setError('Please select a photo.'); return; }
-    if (!description.trim()) { setError('Please add a description.'); return; }
     setLoading(true); setError('');
     try {
       await api.uploadItem(schoolId, description.trim(), file);
       onUploaded();
+      if (addAnother) {
+        setSuccessCount(c => c + 1);
+        reset();
+      }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Upload failed.');
     } finally {
@@ -63,7 +75,19 @@ export default function UploadModal({ schoolId, onClose, onUploaded }: Props) {
     <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal" style={{ maxWidth: 480 }}>
         <h2>Add Lost Item</h2>
-        <p className="subtitle">Take or select a photo of the item, then add a short description.</p>
+        <p className="subtitle">
+          Take or select a photo of the item, then add a short description.
+          {successCount > 0 && (
+            <span style={{
+              marginLeft: 8,
+              background: 'var(--success)', color: '#fff',
+              borderRadius: 999, padding: '2px 10px',
+              fontSize: 12, fontWeight: 600,
+            }}>
+              {successCount} added ✓
+            </span>
+          )}
+        </p>
 
         {/* Drop zone */}
         <div
@@ -105,14 +129,14 @@ export default function UploadModal({ schoolId, onClose, onUploaded }: Props) {
           <button
             className="btn btn-ghost btn-sm"
             style={{ marginTop: -12, marginBottom: 16, fontSize: 12 }}
-            onClick={() => { setFile(null); setPreview(null); }}
+            onClick={reset}
           >
             ✕ Remove photo
           </button>
         )}
 
         <div className="field" style={{ marginBottom: 8 }}>
-          <label htmlFor="desc">Description</label>
+          <label htmlFor="desc">Description <span style={{ color: 'var(--muted)', fontWeight: 400 }}>(optional)</span></label>
           <input
             id="desc"
             className="input"
@@ -129,10 +153,17 @@ export default function UploadModal({ schoolId, onClose, onUploaded }: Props) {
         {error && <p style={{ color: 'var(--danger)', fontSize: 13, marginBottom: 8 }}>{error}</p>}
 
         <div className="modal-actions">
-          <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
-          <button className="btn btn-primary" onClick={handleSubmit} disabled={loading}>
-            {loading ? <span className="spinner" /> : '📤 Upload Item'}
+          <button className="btn btn-ghost" onClick={onClose}>
+            {successCount > 0 ? 'Done' : 'Cancel'}
           </button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn btn-ghost" onClick={() => handleSubmit(true)} disabled={loading || !file}>
+              {loading ? <span className="spinner" /> : '+ Add Another'}
+            </button>
+            <button className="btn btn-primary" onClick={() => handleSubmit(false)} disabled={loading || !file}>
+              {loading ? <span className="spinner" /> : '📤 Upload & Close'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

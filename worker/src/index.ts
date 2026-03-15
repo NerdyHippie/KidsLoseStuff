@@ -151,7 +151,7 @@ async function route(
     if (!school) return err('School not found', 404);
 
     const items = await env.DB.prepare(`
-      SELECT i.id, i.description, i.status, i.created_at,
+      SELECT i.id, i.description, i.image_key, i.status, i.created_at,
              c.initials, c.teacher_name
       FROM   items i
       LEFT JOIN claims c ON c.item_id = i.id
@@ -319,7 +319,7 @@ async function route(
     const description = (formData.get('description') as string ?? '').trim().slice(0, 200);
     const schoolId   = (formData.get('schoolId') as string) ?? user!.schoolId;
 
-    if (!file || !description || !schoolId) return err('image, description, and schoolId required');
+    if (!file || !schoolId) return err('image and schoolId required');
     if (user!.role === 'staff' && schoolId !== user!.schoolId) return err('Forbidden', 403);
 
     // Validate file type
@@ -330,7 +330,7 @@ async function route(
     const itemId = uuid();
     const key    = `${schoolId}/${itemId}.${ext}`;
 
-    await env.BUCKET.put(key, file.stream(), {
+    await env.BUCKET.put(key, await file.arrayBuffer(), {
       httpMetadata: { contentType: ct },
     });
 
