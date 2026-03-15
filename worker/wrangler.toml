@@ -13,7 +13,7 @@ binding = "BUCKET"
 bucket_name = "kids-lose-stuff-photos"     # wrangler r2 bucket create kids-lose-stuff-photos
 
 [vars]
-FRONTEND_URL  = "https://kids-lose-stuff`.pages.dev"   # your Cloudflare Pages URL
+FRONTEND_URL  = "https://kids-lose-stuff.pages.dev"   # your Cloudflare Pages URL
 WORKER_URL    = "https://kids-lose-stuff.nerdiesthippie.workers.dev"
 
 # Set these secrets via: wrangler secret put SECRET_NAME

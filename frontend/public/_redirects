@@ -1,8 +1,6 @@
-/* SPA catch-all – must be in /public */
 /api/*  https://kids-lose-stuff.nerdiesthippie.workers.dev/api/:splat  200
 
-/* SPA fallback */
-/*  All non-API, non-asset routes serve index.html */
+/* SPA fallback — all non-asset routes serve index.html */
 /gallery/*  /index.html  200
 /dashboard  /index.html  200
 /admin      /index.html  200
