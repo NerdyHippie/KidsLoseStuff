@@ -180,6 +180,7 @@ export default function AdminPanel() {
                       <label>Role</label>
                       <select className="input" value={fRole} onChange={e => setFRole(e.target.value)}>
                         <option value="staff">Staff</option>
+                        <option value="volunteer">Volunteer</option>
                         <option value="schooladmin">School Admin</option>
                       </select>
                     </div>
@@ -194,8 +195,8 @@ export default function AdminPanel() {
                 </div>
 
                 <div className={styles.roleNote}>
-                  <strong>Staff</strong> can upload items and mark them as returned.&nbsp;
-                  <strong>School Admin</strong> can also manage faculty for their school.
+                  <strong>Staff</strong> and <strong>Volunteer</strong> can upload items and mark them as returned.&nbsp;
+                  <strong>School Admin</strong> can also manage the team for their school.
                 </div>
 
                 {facultyLoading ? (

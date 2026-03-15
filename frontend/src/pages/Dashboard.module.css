@@ -39,6 +39,30 @@
 .statValue { font-family: 'Fraunces', serif; font-size: 36px; font-weight: 700; line-height: 1; margin-bottom: 6px; }
 .statLabel { font-size: 13px; color: var(--muted); font-weight: 500; }
 
+/* Tabs */
+.tabs {
+  display: flex; gap: 4px;
+  margin-bottom: 20px;
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 0;
+}
+.tab {
+  padding: 10px 20px;
+  border: none; background: none;
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 14px; font-weight: 600;
+  color: var(--muted); cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: color 0.15s, border-color 0.15s;
+}
+.tab:hover { color: var(--primary); }
+.tabActive { color: var(--primary) !important; border-bottom-color: var(--primary) !important; }
+
+/* Team panel */
+.teamAddForm { padding: 20px; margin-bottom: 20px; }
+.teamFormRow { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
+
 /* Filters */
 .filterRow {
   display: flex; gap: 8px; flex-wrap: wrap;

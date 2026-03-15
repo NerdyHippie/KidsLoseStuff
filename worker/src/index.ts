@@ -367,10 +367,16 @@ async function route(
 
   // GET /api/schools
   if (path === '/api/schools' && method === 'GET') {
-    const authErr = requireAuth(user, 'superadmin');
+    const authErr = requireAuth(user);
     if (authErr) return authErr;
-    const schools = await env.DB.prepare('SELECT * FROM schools ORDER BY name').all();
-    return json({ schools: schools.results });
+    if (user!.role === 'superadmin') {
+      const schools = await env.DB.prepare('SELECT * FROM schools ORDER BY name').all();
+      return json({ schools: schools.results });
+    }
+    // schooladmin/staff/volunteer: return only their own school
+    if (!user!.schoolId) return json({ schools: [] });
+    const school = await env.DB.prepare('SELECT * FROM schools WHERE id = ?').bind(user!.schoolId).first();
+    return json({ schools: school ? [school] : [] });
   }
 
   // POST /api/schools
@@ -392,7 +398,7 @@ async function route(
     const authErr = requireAuth(user);
     if (authErr) return authErr;
     const schoolId = facultyListMatch[1];
-    if (user!.role === 'staff') return err('Forbidden', 403);
+    if (user!.role === 'staff' || user!.role === 'volunteer') return err('Forbidden', 403);
     if (user!.role === 'schooladmin' && user!.schoolId !== schoolId) return err('Forbidden', 403);
     const rows = await env.DB.prepare(
       'SELECT id, email, name, role FROM faculty WHERE school_id = ? ORDER BY email'
@@ -406,13 +412,13 @@ async function route(
     const authErr = requireAuth(user);
     if (authErr) return authErr;
     const schoolId = facultyAddMatch[1];
-    if (user!.role === 'staff') return err('Forbidden', 403);
+    if (user!.role === 'staff' || user!.role === 'volunteer') return err('Forbidden', 403);
     if (user!.role === 'schooladmin' && user!.schoolId !== schoolId) return err('Forbidden', 403);
 
     const body  = await req.json<{ email?: string; name?: string; role?: string }>();
     const email = (body.email ?? '').toLowerCase().trim();
     const name  = (body.name  ?? '').trim().slice(0, 100);
-    const role  = ['schooladmin', 'staff'].includes(body.role ?? '') ? body.role! : 'staff';
+    const role  = ['schooladmin', 'staff', 'volunteer'].includes(body.role ?? '') ? body.role! : 'staff';
     if (!email) return err('email required');
 
     const id = uuid();
@@ -432,7 +438,7 @@ async function route(
     const authErr = requireAuth(user);
     if (authErr) return authErr;
     const [, schoolId, facultyId] = facultyDelMatch;
-    if (user!.role === 'staff') return err('Forbidden', 403);
+    if (user!.role === 'staff' || user!.role === 'volunteer') return err('Forbidden', 403);
     if (user!.role === 'schooladmin' && user!.schoolId !== schoolId) return err('Forbidden', 403);
     await env.DB.prepare('DELETE FROM faculty WHERE id = ? AND school_id = ?').bind(facultyId, schoolId).run();
     return json({ success: true });

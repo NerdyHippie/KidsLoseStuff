@@ -2,3 +2,5 @@
 /worker/node_modules
 /private.txt
 /frontend/dist
+/.wrangler
+/.idea
