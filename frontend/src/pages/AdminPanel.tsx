@@ -88,7 +88,7 @@ export default function AdminPanel() {
         <div className="navbar-inner">
           <span className="navbar-brand">Kids Lose <span>Stuff</span> — Admin</span>
           <Link to="/dashboard" className="btn btn-ghost btn-sm" style={{ color: '#fff', borderColor: 'rgba(255,255,255,0.3)' }}>
-            ← Dashboard
+            📊 View Dashboard
           </Link>
         </div>
       </nav>

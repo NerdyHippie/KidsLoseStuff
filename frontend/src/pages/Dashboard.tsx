@@ -115,7 +115,7 @@ export default function Dashboard() {
                 🔗 View Gallery
               </a>
             )}
-            {effectiveSchoolId && (
+            {effectiveSchoolId && me?.role !== 'superadmin' && (
               <button className="btn btn-accent" onClick={() => setShowUpload(true)}>
                 + Add Item
               </button>

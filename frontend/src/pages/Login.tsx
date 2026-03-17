@@ -11,7 +11,7 @@ export default function Login() {
   const errorCode = params.get('error');
 
   useEffect(() => {
-    if (!loading && me) navigate('/dashboard', { replace: true });
+    if (!loading && me) navigate(me.role === 'superadmin' ? '/admin' : '/dashboard', { replace: true });
   }, [me, loading, navigate]);
 
   const errorMessages: Record<string, string> = {
