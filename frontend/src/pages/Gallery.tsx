@@ -166,6 +166,10 @@ export default function Gallery() {
           onClose={() => setLightboxIndex(null)}
           onPrev={lightboxIndex! > 0 ? () => setLightboxIndex(i => i! - 1) : undefined}
           onNext={lightboxIndex! < filtered.length - 1 ? () => setLightboxIndex(i => i! + 1) : undefined}
+          onClaim={lightboxItem.status === 'unclaimed' && !claimedIds.has(lightboxItem.id) ? () => {
+            setClaimItem(lightboxItem);
+            setLightboxIndex(null);
+          } : undefined}
         />
       )}
     </div>

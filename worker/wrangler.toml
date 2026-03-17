@@ -16,6 +16,9 @@ bucket_name = "kids-lose-stuff-photos"     # wrangler r2 bucket create kids-lose
 FRONTEND_URL  = "https://kids-lose-stuff.pages.dev"   # your Cloudflare Pages URL
 WORKER_URL    = "https://kids-lose-stuff.nerdiesthippie.workers.dev"
 
+[observability]
+enabled = true
+
 # Set these secrets via: wrangler secret put SECRET_NAME
 # GOOGLE_CLIENT_ID        – from Google Cloud Console OAuth 2.0 client
 # GOOGLE_CLIENT_SECRET    – from Google Cloud Console OAuth 2.0 client

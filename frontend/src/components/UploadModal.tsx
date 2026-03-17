@@ -5,9 +5,10 @@ interface Props {
   schoolId: string;
   onClose: () => void;
   onUploaded: () => void;
+  onRefresh?: () => void;
 }
 
-export default function UploadModal({ schoolId, onClose, onUploaded }: Props) {
+export default function UploadModal({ schoolId, onClose, onUploaded, onRefresh }: Props) {
   const [file, setFile]               = useState<File | null>(null);
   const [preview, setPreview]         = useState<string | null>(null);
   const [description, setDescription] = useState('');
@@ -59,10 +60,12 @@ export default function UploadModal({ schoolId, onClose, onUploaded }: Props) {
     setLoading(true); setError('');
     try {
       await api.uploadItem(schoolId, description.trim(), file);
-      onUploaded();
       if (addAnother) {
+        onRefresh?.();
         setSuccessCount(c => c + 1);
         reset();
+      } else {
+        onUploaded();
       }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Upload failed.');

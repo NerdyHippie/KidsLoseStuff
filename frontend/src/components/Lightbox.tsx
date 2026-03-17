@@ -6,6 +6,7 @@ interface Props {
   onClose: () => void;
   onPrev?: () => void;
   onNext?: () => void;
+  onClaim?: () => void;
 }
 
 const NAV_BTN: React.CSSProperties = {
@@ -21,7 +22,7 @@ const NAV_BTN: React.CSSProperties = {
   margin: '0 4px',
 };
 
-export default function Lightbox({ src, alt, onClose, onPrev, onNext }: Props) {
+export default function Lightbox({ src, alt, onClose, onPrev, onNext, onClaim }: Props) {
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape')      onClose();
@@ -94,6 +95,25 @@ export default function Lightbox({ src, alt, onClose, onPrev, onNext }: Props) {
           style={{ ...NAV_BTN, right: 12 }}
           aria-label="Next photo"
         >›</button>
+      )}
+
+      {/* Claim button */}
+      {onClaim && (
+        <button
+          onClick={e => { e.stopPropagation(); onClaim(); }}
+          style={{
+            position: 'absolute', bottom: alt ? 60 : 20,
+            left: '50%', transform: 'translateX(-50%)',
+            background: 'var(--accent)', color: '#fff',
+            border: 'none', borderRadius: 8,
+            padding: '10px 24px', fontSize: 14, fontWeight: 600,
+            cursor: 'pointer', whiteSpace: 'nowrap',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+            zIndex: 2,
+          }}
+        >
+          Claim This Item
+        </button>
       )}
 
       {/* Caption */}

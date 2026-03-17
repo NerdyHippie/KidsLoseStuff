@@ -279,6 +279,7 @@ export default function Dashboard() {
           schoolId={effectiveSchoolId}
           onClose={() => setShowUpload(false)}
           onUploaded={() => { setShowUpload(false); loadItems(); }}
+          onRefresh={loadItems}
         />
       )}
 
