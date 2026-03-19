@@ -40,6 +40,10 @@ export default function Dashboard() {
     }).catch(() => {});
   }, [me]);
 
+  useEffect(() => {
+    if (me?.role === 'schooladmin') setTab('team');
+  }, [me?.role]);
+
   useEffect(() => { loadItems(); }, [loadItems]);
 
   const handleDelete = async (itemId: string) => {
@@ -109,14 +113,14 @@ export default function Dashboard() {
             </h1>
             <p className={styles.pageSub}>Manage lost items and process claims</p>
           </div>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'space-between', width: '100%' }}>
             {currentSchool && (
               <a href={`/gallery/${currentSchool.slug}`} target="_blank" rel="noreferrer" className="btn btn-ghost">
                 🔗 View Gallery
               </a>
             )}
             {effectiveSchoolId && me?.role !== 'superadmin' && (
-              <button className="btn btn-accent" onClick={() => setShowUpload(true)}>
+              <button className="btn btn-accent" style={{ marginLeft: 'auto' }} onClick={() => setShowUpload(true)}>
                 + Add Item
               </button>
             )}
@@ -350,7 +354,7 @@ function TeamPanel({ schoolId }: { schoolId: string }) {
           </div>
           <div className="field" style={{ flex: 2 }}>
             <label>Display Name <span style={{ color: 'var(--muted)', fontWeight: 400 }}>(optional)</span></label>
-            <input className="input" placeholder="Mrs. Garcia"
+            <input className="input" placeholder="Mrs. Smith"
               value={fName} onChange={e => setFName(e.target.value)} />
           </div>
           <div className="field" style={{ flex: 1 }}>
