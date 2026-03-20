@@ -73,7 +73,7 @@ export default function ClaimModal({ item, onClose, onClaimed }: Props) {
                 <input
                   id="teacher"
                   className="input"
-                  placeholder="e.g. Mrs. Garcia"
+                  placeholder="e.g. Mrs. Smith"
                   value={teacher}
                   maxLength={80}
                   onChange={e => setTeacher(e.target.value)}

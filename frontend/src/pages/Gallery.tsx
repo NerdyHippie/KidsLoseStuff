@@ -122,7 +122,7 @@ export default function Gallery() {
                     </div>
                   </div>
                   <div className={styles.cardBody}>
-                    <p className={styles.desc}>{item.description || <em style={{ color: 'var(--muted)' }}>No description</em>}</p>
+                    <p className={styles.desc}>{item.description}</p>
                     {item.status === 'claimed' ? (
                       <div className={styles.claimInfo}>
                         <span className={styles.claimIcon}>✓</span>

@@ -173,7 +173,7 @@ export default function AdminPanel() {
                     </div>
                     <div className="field" style={{ flex: 2 }}>
                       <label>Display Name</label>
-                      <input className="input" placeholder="Mrs. Garcia (optional)"
+                      <input className="input" placeholder="Mrs. Smith (optional)"
                         value={fName} onChange={e => setFName(e.target.value)} />
                     </div>
                     <div className="field" style={{ flex: 1 }}>

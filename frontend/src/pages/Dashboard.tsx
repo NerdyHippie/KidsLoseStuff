@@ -244,7 +244,7 @@ export default function Dashboard() {
                       onClick={() => { setLightboxSrc(api.imageUrl(item.image_key ?? '')); setLightboxAlt(item.description || 'Lost item'); }}
                     />
                     <div className={styles.itemCardBody}>
-                      <span className={styles.itemCardDesc}>{item.description || <em style={{ color: 'var(--muted)', fontWeight: 400 }}>No description</em>}</span>
+                      <span className={styles.itemCardDesc}>{item.description}</span>
                       <span className={styles.itemCardMeta}>{formatDate(item.created_at)}</span>
                     </div>
                     <div className={styles.itemCardActions}>
