@@ -58,16 +58,72 @@ async function verifyJWT(token: string, secret: string): Promise<JWTPayload | nu
   } catch { return null; }
 }
 
+// ── OAuth state helpers (CSRF protection) ──────────────────────────────────
+// Signs a nonce+timestamp with HMAC-SHA256. No KV store required.
+
+async function generateOAuthState(secret: string): Promise<string> {
+  const nonce = b64url(crypto.getRandomValues(new Uint8Array(16)));
+  const ts    = Math.floor(Date.now() / 1000);
+  const value = `${nonce}.${ts}`;
+  const key   = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const sig   = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(value));
+  return `${value}.${b64url(sig)}`;
+}
+
+async function verifyOAuthState(state: string, cookieState: string, secret: string): Promise<boolean> {
+  if (!state || !cookieState || state !== cookieState) return false;
+  const parts = state.split('.');
+  if (parts.length !== 3) return false;
+  const [nonce, tsStr, sig] = parts;
+  const ts    = parseInt(tsStr, 10);
+  if (isNaN(ts) || Math.floor(Date.now() / 1000) - ts > 300) return false; // 5-min window
+  const value = `${nonce}.${tsStr}`;
+  try {
+    const key      = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret),
+      { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']);
+    const sigBytes = Uint8Array.from(decodeB64url(sig), c => c.charCodeAt(0));
+    return crypto.subtle.verify('HMAC', key, sigBytes, new TextEncoder().encode(value));
+  } catch { return false; }
+}
+
+// ── Image magic-byte validation ────────────────────────────────────────────
+
+async function isAllowedImage(file: File): Promise<boolean> {
+  const slice = await file.slice(0, 12).arrayBuffer();
+  const b     = new Uint8Array(slice);
+  // JPEG: FF D8 FF
+  if (b[0] === 0xFF && b[1] === 0xD8 && b[2] === 0xFF) return true;
+  // PNG: 89 50 4E 47 0D 0A 1A 0A
+  if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4E && b[3] === 0x47) return true;
+  // GIF: 47 49 46 38
+  if (b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x38) return true;
+  // WebP: RIFF????WEBP
+  if (b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 &&
+      b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50) return true;
+  return false;
+}
+
+// Allowed MIME types (Content-Type whitelist)
+const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
+
 function uuid(): string {
   return crypto.randomUUID();
 }
 
 // ── Response helpers ───────────────────────────────────────────────────────
 
+// Security headers added to every response
+const SECURITY_HEADERS: Record<string, string> = {
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options':        'DENY',
+  'Referrer-Policy':        'strict-origin-when-cross-origin',
+};
+
 function json(data: unknown, status = 200, extra: HeadersInit = {}): Response {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { 'Content-Type': 'application/json', ...extra },
+    headers: { 'Content-Type': 'application/json', ...SECURITY_HEADERS, ...extra },
   });
 }
 
@@ -77,10 +133,10 @@ function err(msg: string, status = 400): Response {
 
 function corsHeaders(origin: string): Record<string, string> {
   return {
-    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Origin':     origin,
     'Access-Control-Allow-Credentials': 'true',
-    'Access-Control-Allow-Methods': 'GET,POST,DELETE,OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods':    'GET,POST,DELETE,OPTIONS',
+    'Access-Control-Allow-Headers':    'Content-Type',
   };
 }
 
@@ -99,6 +155,13 @@ function requireAuth(user: JWTPayload | null, role?: string): Response | null {
   return null;
 }
 
+// Returns true if user is allowed to operate on the given schoolId.
+// Superadmins can touch any school; schooladmins and staff only their own.
+function canAccessSchool(user: JWTPayload, schoolId: string): boolean {
+  if (user.role === 'superadmin') return true;
+  return user.schoolId === schoolId;
+}
+
 // ── Main handler ───────────────────────────────────────────────────────────
 
 export default {
@@ -111,12 +174,13 @@ export default {
 
     // Preflight
     if (method === 'OPTIONS') {
-      return new Response(null, { status: 204, headers: cors });
+      return new Response(null, { status: 204, headers: { ...cors, ...SECURITY_HEADERS } });
     }
 
     function respond(r: Response): Response {
       const h = new Headers(r.headers);
       for (const [k, v] of Object.entries(cors)) h.set(k, v);
+      for (const [k, v] of Object.entries(SECURITY_HEADERS)) h.set(k, v);
       return new Response(r.body, { status: r.status, headers: h });
     }
 
@@ -150,11 +214,11 @@ async function route(
     ).bind(slug).first<{ id: string; name: string; slug: string }>();
     if (!school) return err('School not found', 404);
 
+    // NOTE: initials and teacher_name are intentionally excluded from the
+    // public gallery to protect claimant privacy.
     const items = await env.DB.prepare(`
-      SELECT i.id, i.description, i.image_key, i.status, i.created_at,
-             c.initials, c.teacher_name
+      SELECT i.id, i.description, i.image_key, i.status, i.created_at
       FROM   items i
-      LEFT JOIN claims c ON c.item_id = i.id
       WHERE  i.school_id = ?
       ORDER  BY i.created_at DESC
     `).bind(school.id).all();
@@ -163,12 +227,17 @@ async function route(
   }
 
   // ── Public: image proxy ─────────────────────────────────────────────────
-  // GET /api/images/:key  (key may include slashes encoded as ~)
+  // GET /api/images/:key  (key format: <schoolUUID>/<itemUUID>.<ext>)
   if (path.startsWith('/api/images/') && method === 'GET') {
     const key = decodeURIComponent(path.replace('/api/images/', ''));
+
+    // Validate key shape: <uuid>/<uuid>.<ext> — prevents probing arbitrary R2 paths
+    const KEY_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|jpeg|png|gif|webp)$/i;
+    if (!KEY_RE.test(key)) return new Response('Not found', { status: 404 });
+
     const obj = await env.BUCKET.get(key);
     if (!obj) return new Response('Not found', { status: 404 });
-    const headers = new Headers();
+    const headers = new Headers(SECURITY_HEADERS);
     headers.set('Content-Type', obj.httpMetadata?.contentType ?? 'image/jpeg');
     headers.set('Cache-Control', 'public, max-age=86400');
     return new Response(obj.body, { headers });
@@ -203,20 +272,44 @@ async function route(
   // ── Auth: Google OAuth ──────────────────────────────────────────────────
   // GET /api/auth/login
   if (path === '/api/auth/login' && method === 'GET') {
+    const state = await generateOAuthState(env.JWT_SECRET);
+
     const params = new URLSearchParams({
       client_id:     env.GOOGLE_CLIENT_ID,
       redirect_uri:  `${env.WORKER_URL}/api/auth/callback`,
       response_type: 'code',
       scope:         'openid email profile',
       access_type:   'online',
+      state,
     });
-    return Response.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`, 302);
+
+    // Store the state in a short-lived, HttpOnly cookie for validation on callback
+    const stateCookie = `laf_oauth_state=${state}; Path=/api/auth; HttpOnly; Secure; SameSite=None; Max-Age=300`;
+
+    return new Response(null, {
+      status: 302,
+      headers: {
+        Location:   `https://accounts.google.com/o/oauth2/v2/auth?${params}`,
+        'Set-Cookie': stateCookie,
+      },
+    });
   }
 
   // GET /api/auth/callback
   if (path === '/api/auth/callback' && method === 'GET') {
-    const code = url.searchParams.get('code');
+    const code  = url.searchParams.get('code');
+    const state = url.searchParams.get('state') ?? '';
     if (!code) return Response.redirect(`${env.FRONTEND_URL}/login?error=no_code`, 302);
+
+    // Validate OAuth state to prevent CSRF
+    const cookie     = req.headers.get('Cookie') ?? '';
+    const stateMatch = cookie.match(/(?:^|;\s*)laf_oauth_state=([^;]+)/);
+    const cookieState = stateMatch?.[1] ?? '';
+    const stateOk     = await verifyOAuthState(state, cookieState, env.JWT_SECRET);
+    if (!stateOk) return Response.redirect(`${env.FRONTEND_URL}/login?error=invalid_state`, 302);
+
+    // Clear the state cookie
+    const clearState = 'laf_oauth_state=; Path=/api/auth; HttpOnly; Secure; SameSite=None; Max-Age=0';
 
     // Exchange code for tokens
     const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
@@ -230,38 +323,50 @@ async function route(
         grant_type:    'authorization_code',
       }),
     });
-    if (!tokenRes.ok) return Response.redirect(`${env.FRONTEND_URL}/login?error=token`, 302);
+    if (!tokenRes.ok) return new Response(null, {
+      status: 302,
+      headers: { Location: `${env.FRONTEND_URL}/login?error=token`, 'Set-Cookie': clearState },
+    });
     const tokens = await tokenRes.json<{ id_token: string }>();
 
-    // Decode id_token (we trust Google so no full verify needed here)
+    // Decode id_token (obtained directly from Google over HTTPS — low MITM risk)
     const idPayload = JSON.parse(decodeB64url(tokens.id_token.split('.')[1]));
     const email: string = idPayload.email;
-    if (!email) return Response.redirect(`${env.FRONTEND_URL}/login?error=no_email`, 302);
+    if (!email) return new Response(null, {
+      status: 302,
+      headers: { Location: `${env.FRONTEND_URL}/login?error=no_email`, 'Set-Cookie': clearState },
+    });
 
     let payload: JWTPayload;
 
     // Superadmin check
     if (email.toLowerCase() === env.SUPERADMIN_EMAIL.toLowerCase()) {
       payload = { sub: 'superadmin', email, schoolId: null, role: 'superadmin',
-        exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 };
+        exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 };
     } else {
       // Look up faculty record
       const faculty = await env.DB.prepare(
         'SELECT id, school_id, role FROM faculty WHERE email = ?'
       ).bind(email.toLowerCase()).first<{ id: string; school_id: string; role: string }>();
-      if (!faculty) return Response.redirect(`${env.FRONTEND_URL}/login?error=not_authorized`, 302);
+      if (!faculty) return new Response(null, {
+        status: 302,
+        headers: { Location: `${env.FRONTEND_URL}/login?error=not_authorized`, 'Set-Cookie': clearState },
+      });
       payload = {
         sub: faculty.id, email, schoolId: faculty.school_id, role: faculty.role,
-        exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
+        exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24,  // 24-hour sessions
       };
     }
 
     const token = await signJWT(payload, env.JWT_SECRET);
-    const cookie = `laf_session=${token}; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=${60 * 60 * 24 * 7}`;
+    const sessionCookie = `laf_session=${token}; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=${60 * 60 * 24}`;
 
     return new Response(null, {
       status: 302,
-      headers: { Location: `${env.FRONTEND_URL}/dashboard`, 'Set-Cookie': cookie },
+      headers: {
+        Location:    `${env.FRONTEND_URL}/dashboard`,
+        'Set-Cookie': [sessionCookie, clearState].join(', '),
+      },
     });
   }
 
@@ -294,8 +399,9 @@ async function route(
     if (authErr) return authErr;
     const schoolId = url.searchParams.get('schoolId') ?? user!.schoolId;
     if (!schoolId) return err('No school', 400);
-    // superadmin / schooladmin can query any school, staff only their own
-    if (user!.role === 'staff' && schoolId !== user!.schoolId) return err('Forbidden', 403);
+
+    // FIX: schooladmins (and staff) can only access their own school
+    if (!canAccessSchool(user!, schoolId)) return err('Forbidden', 403);
 
     const items = await env.DB.prepare(`
       SELECT i.id, i.description, i.image_key, i.status, i.created_at,
@@ -314,19 +420,28 @@ async function route(
     const authErr = requireAuth(user);
     if (authErr) return authErr;
 
-    const formData   = await req.formData();
-    const file       = formData.get('image') as File | null;
+    const formData    = await req.formData();
+    const file        = formData.get('image') as File | null;
     const description = (formData.get('description') as string ?? '').trim().slice(0, 200);
-    const schoolId   = (formData.get('schoolId') as string) ?? user!.schoolId;
+    const schoolId    = (formData.get('schoolId') as string) ?? user!.schoolId;
 
     if (!file || !schoolId) return err('image and schoolId required');
-    if (user!.role === 'staff' && schoolId !== user!.schoolId) return err('Forbidden', 403);
 
-    // Validate file type
+    // FIX: schooladmins (and staff) can only upload to their own school
+    if (!canAccessSchool(user!, schoolId)) return err('Forbidden', 403);
+
+    // File size limit: 15 MB
+    const MAX_BYTES = 15 * 1024 * 1024;
+    if (file.size > MAX_BYTES) return err('Image must be smaller than 15 MB');
+
+    // Validate Content-Type against whitelist
     const ct = file.type;
-    if (!ct.startsWith('image/')) return err('File must be an image');
+    if (!ALLOWED_MIME.has(ct)) return err('Only JPEG, PNG, GIF, and WebP images are allowed');
 
-    const ext    = ct === 'image/png' ? 'png' : ct === 'image/gif' ? 'gif' : 'jpg';
+    // Validate actual file contents against magic bytes
+    if (!(await isAllowedImage(file))) return err('File contents do not match an allowed image format');
+
+    const ext    = ct === 'image/png' ? 'png' : ct === 'image/gif' ? 'gif' : ct === 'image/webp' ? 'webp' : 'jpg';
     const itemId = uuid();
     const key    = `${schoolId}/${itemId}.${ext}`;
 
@@ -352,7 +467,7 @@ async function route(
       'SELECT school_id, image_key FROM items WHERE id = ?'
     ).bind(itemId).first<{ school_id: string; image_key: string }>();
     if (!item) return err('Not found', 404);
-    if (user!.role === 'staff' && item.school_id !== user!.schoolId) return err('Forbidden', 403);
+    if (!canAccessSchool(user!, item.school_id)) return err('Forbidden', 403);
 
     // Delete from R2
     await env.BUCKET.delete(item.image_key);
