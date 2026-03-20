@@ -71,6 +71,14 @@
 .heroWave { line-height: 0; }
 .heroWave svg { width: 100%; height: 40px; display: block; }
 
+/* Language picker */
+.langPickerWrap {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  z-index: 10;
+}
+
 /* Filters */
 .filterBar { padding: 16px 0 0; background: var(--bg); }
 .filters { display: flex; gap: 8px; flex-wrap: wrap; padding-bottom: 16px; border-bottom: 1px solid var(--border); }

@@ -4,6 +4,8 @@ import { api } from '../api';
 import type { Item, School } from '../types';
 import ClaimModal from '../components/ClaimModal';
 import Lightbox from '../components/Lightbox';
+import LanguagePicker from '../components/LanguagePicker';
+import { LOCALES, detectLocale, type Locale } from '../i18n';
 import styles from './Gallery.module.css';
 
 export default function Gallery() {
@@ -16,6 +18,9 @@ export default function Gallery() {
   const [claimedIds, setClaimedIds] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState<'all' | 'unclaimed' | 'claimed'>('all');
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [locale, setLocale] = useState<Locale>(detectLocale);
+
+  const t = LOCALES[locale];
 
   useEffect(() => {
     if (!slug) return;
@@ -44,8 +49,8 @@ export default function Gallery() {
     <div className={styles.center}>
       <div className={styles.errorBox}>
         <div className={styles.errorIcon}>📭</div>
-        <h2>Gallery not found</h2>
-        <p>Check the link and try again.</p>
+        <h2>{t.galleryNotFound}</h2>
+        <p>{t.checkLink}</p>
       </div>
     </div>
   );
@@ -54,16 +59,22 @@ export default function Gallery() {
     <div className={styles.page}>
       {/* Hero */}
       <header className={styles.hero}>
+        {/* Language picker — top-right corner */}
+        <div className={styles.langPickerWrap}>
+          <LanguagePicker locale={locale} onChange={setLocale} />
+        </div>
+
         <div className={styles.heroInner}>
           <div className={styles.heroTag}>Kids Lose Stuff</div>
           <h1 className={styles.heroTitle}>{school.name}</h1>
           <p className={styles.heroSub}>
-            Recognize something? Tap <strong>Claim This Item</strong> and enter your
-            child's initials and teacher's name — we'll get it back to their homeroom.
+            {t.heroSub.split('Claim This Item').length > 1
+              ? <>{t.heroSub.split(t.claimBtn)[0]}<strong>{t.claimBtn}</strong>{t.heroSub.split(t.claimBtn)[1]}</>
+              : t.heroSub}
           </p>
           <div className={styles.heroBadge}>
             <span className={styles.dot} />
-            <strong>{unclaimed}</strong>&nbsp;item{unclaimed !== 1 ? 's' : ''} waiting to be claimed
+            {t.itemsWaiting(unclaimed)}
           </div>
         </div>
         <div className={styles.heroWave}>
@@ -83,9 +94,9 @@ export default function Gallery() {
                 className={`${styles.filterBtn} ${filter === f ? styles.filterActive : ''}`}
                 onClick={() => setFilter(f)}
               >
-                {f === 'all' ? `All (${items.length})` :
-                 f === 'unclaimed' ? `Unclaimed (${items.filter(i=>i.status==='unclaimed').length})` :
-                 `Claimed (${items.filter(i=>i.status==='claimed').length})`}
+                {f === 'all'       ? t.filterAll(items.length) :
+                 f === 'unclaimed' ? t.filterUnclaimed(items.filter(i => i.status === 'unclaimed').length) :
+                                    t.filterClaimed(items.filter(i => i.status === 'claimed').length)}
               </button>
             ))}
           </div>
@@ -98,7 +109,7 @@ export default function Gallery() {
           {filtered.length === 0 ? (
             <div className={styles.empty}>
               <p className={styles.emptyIcon}>🎉</p>
-              <p>No {filter !== 'all' ? filter : ''} items right now!</p>
+              <p>{t.noItems(filter)}</p>
             </div>
           ) : (
             <div className={styles.grid}>
@@ -126,7 +137,7 @@ export default function Gallery() {
                     {item.status === 'claimed' ? (
                       <div className={styles.claimInfo}>
                         <span className={styles.claimIcon}>✓</span>
-                        Claimed
+                        {t.claimedBadge.replace('✓ ', '')}
                       </div>
                     ) : (
                       <button
@@ -135,7 +146,7 @@ export default function Gallery() {
                         onClick={() => !claimedIds.has(item.id) && setClaimItem(item)}
                         disabled={claimedIds.has(item.id)}
                       >
-                        {claimedIds.has(item.id) ? '✓ Claimed' : 'Claim This Item'}
+                        {claimedIds.has(item.id) ? t.claimedBadge : t.claimBtn}
                       </button>
                     )}
                   </div>
@@ -148,12 +159,13 @@ export default function Gallery() {
 
       {/* Footer */}
       <footer className={styles.footer}>
-        <p>Items are removed from this gallery once they've been returned to their owner.</p>
+        <p>{t.footer}</p>
       </footer>
 
       {claimItem && (
         <ClaimModal
           item={claimItem}
+          locale={locale}
           onClose={() => setClaimItem(null)}
           onClaimed={handleClaimed}
         />

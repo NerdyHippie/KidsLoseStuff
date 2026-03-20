@@ -1,32 +1,35 @@
 import { useState } from 'react';
 import { api } from '../api';
 import type { Item } from '../types';
+import { LOCALES, type Locale } from '../i18n';
 
 interface Props {
   item: Item;
+  locale: Locale;
   onClose: () => void;
   onClaimed: (itemId: string) => void;
 }
 
-export default function ClaimModal({ item, onClose, onClaimed }: Props) {
-  const [initials, setInitials]       = useState('');
-  const [teacher, setTeacher]         = useState('');
-  const [loading, setLoading]         = useState(false);
-  const [error, setError]             = useState('');
-  const [confirmed, setConfirmed]     = useState(false);
+export default function ClaimModal({ item, locale, onClose, onClaimed }: Props) {
+  const t = LOCALES[locale];
+  const [initials, setInitials]   = useState('');
+  const [teacher, setTeacher]     = useState('');
+  const [loading, setLoading]     = useState(false);
+  const [error, setError]         = useState('');
+  const [confirmed, setConfirmed] = useState(false);
 
   const handleSubmit = async () => {
     const init = initials.trim().toUpperCase();
     const tchr = teacher.trim();
-    if (!init) { setError('Please enter your child\'s initials.'); return; }
-    if (!tchr) { setError('Please enter the teacher\'s name.'); return; }
+    if (!init) { setError(t.errorInitials); return; }
+    if (!tchr) { setError(t.errorTeacher);  return; }
     setLoading(true); setError('');
     try {
       await api.claimItem(item.id, init, tchr);
       setConfirmed(true);
       setTimeout(() => onClaimed(item.id), 2000);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Something went wrong.');
+      setError(e instanceof Error ? e.message : t.errorGeneric);
     } finally {
       setLoading(false);
     }
@@ -38,42 +41,35 @@ export default function ClaimModal({ item, onClose, onClaimed }: Props) {
         {confirmed ? (
           <div style={{ textAlign: 'center', padding: '8px 0' }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
-            <h2 style={{ marginBottom: 8 }}>Claim Recorded!</h2>
-            <p style={{ color: 'var(--muted)', fontSize: 14 }}>
-              Faculty will deliver the item to the homeroom. Keep an eye out!
-            </p>
+            <h2 style={{ marginBottom: 8 }}>{t.successTitle}</h2>
+            <p style={{ color: 'var(--muted)', fontSize: 14 }}>{t.successBody}</p>
           </div>
         ) : (
           <>
-            <h2>Claim This Item</h2>
-            <p className="subtitle">
-              "{item.description}" — enter your child's initials and teacher's name.
-              Faculty will drop it off at their homeroom.
-            </p>
+            <h2>{t.claimTitle}</h2>
+            <p className="subtitle">{t.claimSubtitle(item.description || '')}</p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div className="field">
-                <label htmlFor="initials">Child's Initials</label>
+                <label htmlFor="initials">{t.initialsLabel}</label>
                 <input
                   id="initials"
                   className="input"
-                  placeholder="e.g. A.M."
+                  placeholder={t.initialsPlaceholder}
                   value={initials}
                   maxLength={5}
                   onChange={e => setInitials(e.target.value)}
                   style={{ textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}
                 />
-                <span style={{ fontSize: 12, color: 'var(--muted)' }}>
-                  First and last initials only — no full name needed.
-                </span>
+                <span style={{ fontSize: 12, color: 'var(--muted)' }}>{t.initialsHint}</span>
               </div>
 
               <div className="field">
-                <label htmlFor="teacher">Teacher's Name</label>
+                <label htmlFor="teacher">{t.teacherLabel}</label>
                 <input
                   id="teacher"
                   className="input"
-                  placeholder="e.g. Mrs. Smith"
+                  placeholder={t.teacherPlaceholder}
                   value={teacher}
                   maxLength={80}
                   onChange={e => setTeacher(e.target.value)}
@@ -86,13 +82,13 @@ export default function ClaimModal({ item, onClose, onClaimed }: Props) {
             </div>
 
             <div className="modal-actions">
-              <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
+              <button className="btn btn-ghost" onClick={onClose}>{t.cancel}</button>
               <button
                 className="btn btn-accent"
                 onClick={handleSubmit}
                 disabled={loading}
               >
-                {loading ? <span className="spinner" /> : 'Submit Claim'}
+                {loading ? <span className="spinner" /> : t.submit}
               </button>
             </div>
           </>
